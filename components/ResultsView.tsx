@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { QuizResults, Category, Question } from '../types';
 import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import 'jspdf-autotable';
 
 interface ResultsViewProps {
   results: QuizResults;
@@ -38,7 +38,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ results, onRestart, onHome, q
   };
 
   const downloadPDF = async () => {
-    const doc = new jsPDF();
+    const doc = new jsPDF() as any;
     
     doc.setFontSize(22);
     doc.setTextColor(51, 65, 85);
@@ -69,7 +69,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ results, onRestart, onHome, q
       ];
     });
 
-    autoTable(doc, {
+    doc.autoTable({
       startY: 55,
       head: [['#', 'Category', 'Your Answer', 'Correct', 'Status', 'Explanation']],
       body: tableData,
