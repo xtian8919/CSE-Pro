@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { QuizResults, Category, Question } from '../types';
 import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 interface ResultsViewProps {
   results: QuizResults;
@@ -38,7 +38,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ results, onRestart, onHome, q
   };
 
   const downloadPDF = async () => {
-    const doc = new jsPDF() as any;
+    const doc = new jsPDF();
     
     doc.setFontSize(22);
     doc.setTextColor(51, 65, 85);
@@ -69,7 +69,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ results, onRestart, onHome, q
       ];
     });
 
-    doc.autoTable({
+    autoTable(doc, {
       startY: 55,
       head: [['#', 'Category', 'Your Answer', 'Correct', 'Status', 'Explanation']],
       body: tableData,
@@ -100,7 +100,6 @@ const ResultsView: React.FC<ResultsViewProps> = ({ results, onRestart, onHome, q
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
-        {/* Main Result Card */}
         <div className={`lg:col-span-1 bg-white p-12 rounded-[3rem] shadow-2xl border-b-[12px] flex flex-col items-center justify-center text-center transition-all ${isPassed ? 'border-emerald-500 shadow-emerald-100' : 'border-red-500 shadow-red-100'}`}>
           <div className="mb-8">
             <p className="text-sm font-black text-slate-400 uppercase tracking-widest mb-3">Final Weighted Rating</p>
@@ -136,7 +135,6 @@ const ResultsView: React.FC<ResultsViewProps> = ({ results, onRestart, onHome, q
           </div>
         </div>
 
-        {/* Breakdown Card */}
         <div className="lg:col-span-2 bg-white p-10 rounded-[3rem] shadow-xl border border-slate-100">
           <div className="flex items-center justify-between mb-10">
             <div>
