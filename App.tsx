@@ -33,6 +33,7 @@ const App: React.FC = () => {
     if (timerRef.current !== null) {
       window.clearInterval(timerRef.current);
     }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
   const startTest = async (count: number, category?: Category) => {
@@ -47,7 +48,7 @@ const App: React.FC = () => {
     setReviewUnansweredOnly(false);
     setCurrentTestConfig({ count, category });
     
-    setLoadingMessage(category ? `Preparing ${category} Test...` : "Preparing Professional Mock Exam...");
+    setLoadingMessage(category ? `Curating ${category} drills...` : "Simulating Professional Mock Exam...");
     
     try {
       const data = await fetchQuestions(count, category);
@@ -72,7 +73,8 @@ const App: React.FC = () => {
       }, 1000);
 
     } catch (err) {
-      setError("Failed to load items. Please check your connection.");
+      setError("Failed to generate items. Please check your API configuration.");
+      setView('menu');
     } finally {
       setIsLoading(false);
     }
@@ -83,42 +85,29 @@ const App: React.FC = () => {
     if (reviewerNotes.length > 0) return;
     
     setIsLoading(true);
-    setLoadingMessage("Generating Reviewer Notes for 2026...");
+    setLoadingMessage("Synthesizing 2026 Core Syllabus...");
     try {
       const notes = await fetchReviewerNotes();
       setReviewerNotes(notes);
     } catch (err) {
-      setError("Failed to generate notes.");
+      setError("Failed to generate study notes.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const findNextAvailable = (direction: 'forward' | 'backward', startIdx: number): number | null => {
-    let i = startIdx + (direction === 'forward' ? 1 : -1);
-    while (i >= 0 && i < questions.length) {
-      if (!reviewUnansweredOnly || userAnswers[questions[i].id] === undefined) {
-        return i;
-      }
-      i += (direction === 'forward' ? 1 : -1);
-    }
-    return null;
-  };
-
   const handleNext = () => {
-    const nextIdx = findNextAvailable('forward', currentIndex);
-    if (nextIdx !== null) {
-      setCurrentIndex(nextIdx);
+    if (currentIndex < questions.length - 1) {
+      setCurrentIndex(prev => prev + 1);
       setShowFeedback(false);
-    } else if (!reviewUnansweredOnly && currentIndex === questions.length - 1) {
+    } else {
       calculateResults();
     }
   };
 
   const handlePrev = () => {
-    const prevIdx = findNextAvailable('backward', currentIndex);
-    if (prevIdx !== null) {
-      setCurrentIndex(prevIdx);
+    if (currentIndex > 0) {
+      setCurrentIndex(prev => prev - 1);
       setShowFeedback(false);
     }
   };
@@ -182,143 +171,142 @@ const App: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 px-4 text-center">
-        <div className="relative w-24 h-24 mb-8">
-          <div className="absolute inset-0 border-4 border-blue-200 rounded-full"></div>
-          <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white px-4 text-center">
+        <div className="relative w-32 h-32 mb-12">
+          <div className="absolute inset-0 border-8 border-slate-100 rounded-[2rem]"></div>
+          <div className="absolute inset-0 border-8 border-blue-600 rounded-[2rem] border-t-transparent animate-spin"></div>
+          <div className="absolute inset-0 flex items-center justify-center">
+             <span className="text-xs font-black text-blue-600 animate-pulse">CSE</span>
+          </div>
         </div>
-        <h2 className="text-2xl font-bold text-slate-800 mb-2">{loadingMessage}</h2>
-        <p className="text-slate-500 text-sm max-w-xs mx-auto">This may take a moment while our AI prepares challenging 2026-standard items.</p>
+        <h2 className="text-3xl font-black text-slate-900 mb-3">{loadingMessage}</h2>
+        <p className="text-slate-400 text-sm max-w-sm mx-auto leading-relaxed">Our AI is drafting 2026-standard items based on the latest Civil Service Commission syllabus.</p>
       </div>
     );
   }
 
   if (view === 'menu') {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
-        <header className="bg-white border-b border-slate-200 py-6 px-4">
-          <div className="max-w-6xl mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-blue-200">CSE</div>
-              <div>
-                <h1 className="text-2xl font-black text-slate-900 tracking-tight">Advance CSE: Professional <span className="text-blue-600">2026</span></h1>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Ultimate Civil Service Reviewer</p>
+      <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900">
+        <header className="bg-white border-b border-slate-200 py-6 px-6 sticky top-0 z-40">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-5">
+              <div className="w-14 h-14 bg-slate-900 rounded-[1.25rem] flex items-center justify-center text-white font-black text-xl shadow-2xl shadow-slate-200">
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
               </div>
+              <div>
+                <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+                  CSC Professional <span className="text-blue-600 px-2 py-0.5 bg-blue-50 rounded-lg text-lg">2026</span>
+                </h1>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Ultimate AI-Powered Preparatory Platform</p>
+              </div>
+            </div>
+            <div className="hidden md:flex items-center gap-4">
+               <div className="text-right">
+                  <p className="text-[10px] font-black text-slate-400 uppercase">Current Session</p>
+                  <p className="text-sm font-bold text-slate-800">Guest Candidate</p>
+               </div>
+               <div className="w-10 h-10 bg-slate-100 rounded-full border border-slate-200"></div>
             </div>
           </div>
         </header>
 
-        <main className="flex-1 max-w-6xl mx-auto px-4 py-12 w-full">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-black text-slate-900 mb-4">Select Your Study Mode</h2>
-            <p className="text-slate-500 max-w-xl mx-auto">Comprehensive practice tools designed for the 2026 Professional Level Examination. Aim for 80% to pass!</p>
-          </div>
+        <main className="flex-1 max-w-7xl mx-auto px-6 py-16 w-full">
+          {error && (
+            <div className="mb-8 p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 font-bold text-sm flex items-center gap-3">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              {error}
+            </div>
+          )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Full Mock Test */}
-            <button 
-              onClick={() => startTest(170)}
-              className="group relative bg-slate-900 p-8 rounded-[2rem] text-left transition-all hover:scale-[1.02] hover:shadow-2xl overflow-hidden md:col-span-2 lg:col-span-1"
-            >
-              <div className="relative z-10">
-                <span className="inline-block px-3 py-1 bg-blue-600 text-white text-[10px] font-black rounded-full uppercase mb-4">Elite Mode</span>
-                <h3 className="text-3xl font-black text-white mb-2">Practice Test</h3>
-                <p className="text-slate-400 text-sm mb-6">Full 170-item professional mock exam with weighted scoring (3h 10m).</p>
-                <div className="flex items-center gap-2 text-blue-400 font-bold text-xs uppercase tracking-widest group-hover:gap-3 transition-all">
-                  Start Mock Exam <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7-7 7" /></svg>
-                </div>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            <div className="lg:col-span-8 space-y-8">
+              <div className="bg-white p-10 md:p-14 rounded-[3.5rem] shadow-2xl shadow-slate-200 relative overflow-hidden group">
+                 <div className="relative z-10">
+                    <span className="inline-block px-4 py-1.5 bg-blue-600 text-white text-[10px] font-black rounded-full uppercase tracking-widest mb-6">Simulation Engine</span>
+                    <h2 className="text-5xl font-black text-slate-900 mb-6 leading-[1.1]">Full Mock <span className="text-blue-600">Professional</span> Examination</h2>
+                    <p className="text-slate-500 text-lg mb-10 max-w-xl leading-relaxed">Experience the full 170-item test under realistic time pressure. Featuring weighted scoring across all 4 syllabus categories.</p>
+                    <button 
+                      onClick={() => startTest(170)}
+                      className="px-10 py-5 bg-slate-900 text-white font-black rounded-2xl hover:bg-black transition-all hover:scale-105 shadow-xl flex items-center gap-4 uppercase tracking-[0.2em] text-sm"
+                    >
+                      Initialize Mock Exam
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M14 5l7 7-7 7" /></svg>
+                    </button>
+                 </div>
+                 <div className="absolute -right-16 -top-16 opacity-[0.03] text-slate-900 text-[20rem] font-black select-none pointer-events-none group-hover:rotate-6 transition-transform">170</div>
               </div>
-              <div className="absolute top-0 right-0 p-8 opacity-10 text-white text-8xl font-black select-none group-hover:rotate-12 transition-transform">170</div>
-            </button>
 
-            {/* Category Tests */}
-            <div className="grid grid-cols-2 gap-4 md:col-span-2">
-              <button onClick={() => startTest(50, Category.NUMERICAL)} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all text-left group">
-                <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-4 text-2xl font-bold group-hover:bg-emerald-600 group-hover:text-white transition-colors">🔢</div>
-                <h4 className="font-black text-slate-800">Numerical</h4>
-                <p className="text-xs text-slate-400">50 items • Math & Logic</p>
-              </button>
-              
-              <button onClick={() => startTest(50, Category.ANALYTICAL)} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all text-left group">
-                <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center mb-4 text-2xl font-bold group-hover:bg-purple-600 group-hover:text-white transition-colors">🧠</div>
-                <h4 className="font-black text-slate-800">Analytical</h4>
-                <p className="text-xs text-slate-400">50 items • Reasoning</p>
-              </button>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <button onClick={openReviewer} className="bg-blue-600 p-8 rounded-[3rem] text-left transition-all hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-200 group relative overflow-hidden">
+                    <div className="relative z-10">
+                      <h3 className="text-2xl font-black text-white mb-2">Smart Syllabus</h3>
+                      <p className="text-blue-100 text-sm mb-8 leading-relaxed">Access key concepts, RA 6713 summaries, and math shortcuts tailored for the 2026 exam.</p>
+                      <span className="flex items-center gap-2 text-white font-black text-[10px] uppercase tracking-widest group-hover:gap-4 transition-all">Launch Reviewer <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" /></svg></span>
+                    </div>
+                    <div className="absolute right-0 bottom-0 p-4 opacity-10 text-white text-9xl font-black">📖</div>
+                 </button>
 
-              <button onClick={() => startTest(50, Category.VERBAL)} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all text-left group">
-                <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-4 text-2xl font-bold group-hover:bg-blue-600 group-hover:text-white transition-colors">✍️</div>
-                <h4 className="font-black text-slate-800">Verbal</h4>
-                <p className="text-xs text-slate-400">50 items • Language</p>
-              </button>
-
-              <button onClick={() => startTest(50, Category.GENERAL_INFO)} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all text-left group">
-                <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mb-4 text-2xl font-bold group-hover:bg-amber-600 group-hover:text-white transition-colors">⚖️</div>
-                <h4 className="font-black text-slate-800">General Info</h4>
-                <p className="text-xs text-slate-400">50 items • Constitution/RA 6713</p>
-              </button>
+                 <button onClick={() => setView('strategies')} className="bg-white p-8 rounded-[3rem] border border-slate-200 text-left transition-all hover:scale-[1.02] hover:shadow-xl group relative overflow-hidden shadow-sm">
+                    <div className="relative z-10">
+                      <h3 className="text-2xl font-black text-slate-900 mb-2">Tactical Guide</h3>
+                      <p className="text-slate-400 text-sm mb-8 leading-relaxed">Master the "Elimination Rule" and time management techniques used by top-tier candidates.</p>
+                      <span className="flex items-center gap-2 text-blue-600 font-black text-[10px] uppercase tracking-widest group-hover:gap-4 transition-all">Read Strategies <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" /></svg></span>
+                    </div>
+                    <div className="absolute right-0 bottom-0 p-4 opacity-5 text-slate-900 text-9xl font-black">🎯</div>
+                 </button>
+              </div>
             </div>
 
-            {/* Reviewer Notes */}
-            <button 
-              onClick={openReviewer}
-              className="bg-blue-600 p-8 rounded-[2rem] text-left transition-all hover:scale-[1.02] hover:shadow-2xl overflow-hidden group"
-            >
-              <div className="relative z-10">
-                <h3 className="text-2xl font-black text-white mb-2">Reviewer Notes</h3>
-                <p className="text-blue-100 text-sm mb-6">Key concepts, strategies, and formulas for the 2026 Exam.</p>
-                <div className="flex items-center gap-2 text-white font-bold text-xs uppercase tracking-widest group-hover:gap-3 transition-all">
-                  Open Study Guide <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7-7 7" /></svg>
-                </div>
-              </div>
-            </button>
+            <div className="lg:col-span-4 space-y-6">
+               <div className="bg-slate-900 p-8 rounded-[3rem] text-white">
+                  <h4 className="text-sm font-black text-blue-400 uppercase tracking-widest mb-6">Targeted Drills</h4>
+                  <div className="space-y-4">
+                     {[
+                       { cat: Category.NUMERICAL, emoji: "🔢", color: "text-emerald-400" },
+                       { cat: Category.ANALYTICAL, emoji: "🧠", color: "text-purple-400" },
+                       { cat: Category.VERBAL, emoji: "✍️", color: "text-blue-400" },
+                       { cat: Category.GENERAL_INFO, emoji: "⚖️", color: "text-amber-400" }
+                     ].map((item) => (
+                       <button 
+                        key={item.cat}
+                        onClick={() => startTest(50, item.cat)}
+                        className="w-full flex items-center justify-between p-4 bg-white/5 rounded-2xl hover:bg-white/10 transition-colors group"
+                       >
+                          <div className="flex items-center gap-4">
+                             <span className="text-2xl">{item.emoji}</span>
+                             <div className="text-left">
+                                <p className="font-bold text-slate-100 group-hover:text-white transition-colors">{item.cat}</p>
+                                <p className="text-[10px] font-bold text-slate-500 uppercase">50 Focused Items</p>
+                             </div>
+                          </div>
+                          <svg className="w-5 h-5 text-slate-600 group-hover:text-blue-400 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" /></svg>
+                       </button>
+                     ))}
+                  </div>
+               </div>
 
-            {/* Strategies Guide */}
-            <button 
-              onClick={() => setView('strategies')}
-              className="bg-slate-800 p-8 rounded-[2rem] text-left transition-all hover:scale-[1.02] hover:shadow-2xl overflow-hidden group lg:col-span-2"
-            >
-              <div className="relative z-10 flex flex-col h-full justify-between">
-                <div>
-                  <h3 className="text-2xl font-black text-white mb-2">📘 Strategies to Pass the CSE</h3>
-                  <p className="text-slate-400 text-sm">Master the art of answering each category under time pressure. Expert-level tips for 2026.</p>
-                </div>
-                <div className="mt-6 flex items-center gap-2 text-blue-400 font-bold text-xs uppercase tracking-widest group-hover:gap-3 transition-all">
-                  Read Strategies <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7-7 7" /></svg>
-                </div>
-              </div>
-              <div className="absolute -bottom-4 -right-4 opacity-10 text-white text-[8rem] font-black select-none leading-none group-hover:rotate-6 transition-transform">🎯</div>
-            </button>
-          </div>
-          
-          <div className="mt-12 p-8 bg-blue-50 rounded-[2.5rem] flex flex-col md:flex-row items-center justify-between gap-8 border border-blue-100">
-             <div className="max-w-md">
-                <h5 className="text-blue-600 font-black uppercase tracking-widest text-xs mb-2">Pro Tip</h5>
-                <h4 className="text-xl font-bold text-slate-800 mb-2">Passing is 80%</h4>
-                <p className="text-slate-600 text-sm">Focus your efforts on Analytical, Numerical and Verbal sections, which collectively account for 95% of your final weighted rating.</p>
-             </div>
-             <div className="flex gap-4">
-                <div className="text-center bg-white p-4 rounded-3xl w-24 border border-blue-100">
-                   <p className="text-2xl font-black text-blue-600">30%</p>
-                   <p className="text-[10px] font-bold text-slate-400 uppercase">Verbal</p>
-                </div>
-                <div className="text-center bg-white p-4 rounded-3xl w-24 border border-blue-100">
-                   <p className="text-2xl font-black text-purple-600">35%</p>
-                   <p className="text-[10px] font-bold text-slate-400 uppercase">Analytical</p>
-                </div>
-                <div className="text-center bg-white p-4 rounded-3xl w-24 border border-blue-100">
-                   <p className="text-2xl font-black text-emerald-600">30%</p>
-                   <p className="text-[10px] font-bold text-slate-400 uppercase">Numerical</p>
-                </div>
-                 <div className="text-center bg-white p-4 rounded-3xl w-24 border border-blue-100">
-                   <p className="text-2xl font-black text-orange-600">5%</p>
-                   <p className="text-[10px] font-bold text-slate-400 uppercase">Gen Info</p>
-                </div>
-             </div>
+               <div className="bg-emerald-50 p-8 rounded-[3rem] border border-emerald-100">
+                  <h5 className="text-emerald-700 font-black uppercase tracking-widest text-[10px] mb-4">Passing Probability</h5>
+                  <div className="flex items-end gap-3 mb-6">
+                     <span className="text-5xl font-black text-emerald-600">80.0</span>
+                     <span className="text-xl font-bold text-emerald-400 mb-2">%</span>
+                  </div>
+                  <p className="text-emerald-900/70 text-sm leading-relaxed font-medium">This is the minimum required rating. Statistics show that aiming for 85% in mock tests ensures success on the actual exam day.</p>
+               </div>
+            </div>
           </div>
         </main>
         
-        <footer className="py-8 text-center text-slate-400 text-xs font-bold uppercase tracking-widest">
-           &copy; 2026 Civil Service Eligibility • Practice Mock App
+        <footer className="py-12 px-6 border-t border-slate-200 bg-white">
+           <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+              <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em]">&copy; 2026 Civil Service Eligibility AI Preparatory App</p>
+              <div className="flex gap-8">
+                 <a href="#" className="text-slate-400 hover:text-slate-900 text-[10px] font-black uppercase tracking-widest transition-colors">Privacy Policy</a>
+                 <a href="#" className="text-slate-400 hover:text-slate-900 text-[10px] font-black uppercase tracking-widest transition-colors">Exam Guidelines</a>
+                 <a href="#" className="text-slate-400 hover:text-slate-900 text-[10px] font-black uppercase tracking-widest transition-colors">Support</a>
+              </div>
+           </div>
         </footer>
       </div>
     );
@@ -347,74 +335,61 @@ const App: React.FC = () => {
   const currentQuestion = questions[currentIndex];
   const progress = ((currentIndex + 1) / questions.length) * 100;
   const isTimeLow = timeLeft < (15 * 60);
-  const unansweredCount = questions.length - Object.keys(userAnswers).length;
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-24 font-sans">
-      <header className="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm px-4 py-3 md:py-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button onClick={() => { if(confirm("End test and return to menu?")) setView('menu'); }} className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-black hover:bg-slate-900 transition-colors">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
+    <div className="min-h-screen bg-slate-50 pb-32 font-sans selection:bg-blue-100">
+      <header className="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button onClick={() => { if(confirm("Discard current progress and exit?")) setView('menu'); }} className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-600 hover:bg-red-50 hover:text-red-600 transition-all border border-slate-200">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
             <div className="hidden sm:block">
-              <h1 className="font-bold text-slate-800 leading-none">
-                {currentTestConfig?.category ? `${currentTestConfig.category} Set` : "Professional Mock Exam"}
+              <h1 className="font-black text-slate-900 tracking-tight">
+                {currentTestConfig?.category ? `${currentTestConfig.category} Drills` : "Professional Mock Series"}
               </h1>
-              <span className="text-[10px] font-bold text-blue-500 uppercase tracking-tighter">Items: {questions.length}</span>
+              <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Active Session • Item {currentIndex + 1} of {questions.length}</span>
             </div>
           </div>
           
-          <div className="flex items-center gap-3 md:gap-6">
-            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border ${isTimeLow ? 'bg-red-50 border-red-200 text-red-600 animate-pulse' : 'bg-slate-50 border-slate-200 text-slate-700'}`}>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              <span className="text-xs md:text-sm font-mono font-bold">{formatTime(timeLeft)}</span>
+          <div className="flex items-center gap-4 md:gap-8">
+            <div className={`flex items-center gap-3 px-5 py-2.5 rounded-2xl border transition-all ${isTimeLow ? 'bg-red-50 border-red-200 text-red-600 animate-pulse scale-105' : 'bg-slate-900 border-slate-800 text-white'}`}>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              <span className="text-lg font-black font-mono tracking-tighter">{formatTime(timeLeft)}</span>
             </div>
-
-            <div className="text-right hidden md:block w-32">
-              <p className="text-[10px] font-bold text-slate-400 uppercase">Progress: {currentIndex + 1}/{questions.length}</p>
-              <div className="w-full h-1.5 bg-slate-100 rounded-full mt-1 overflow-hidden">
-                <div className="h-full bg-blue-600 transition-all duration-300" style={{ width: `${progress}%` }}></div>
-              </div>
-            </div>
-
-            <button onClick={calculateResults} className="px-5 py-2 bg-slate-900 text-white text-xs font-black rounded-lg hover:bg-black transition-colors uppercase tracking-widest">Submit</button>
+            <button onClick={calculateResults} className="px-8 py-3 bg-blue-600 text-white text-xs font-black rounded-xl hover:bg-blue-700 transition-all uppercase tracking-[0.2em] shadow-lg shadow-blue-100">End & Score</button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 pt-6 md:pt-10">
-        <div className="bg-white p-6 md:p-10 rounded-[2.5rem] shadow-xl border border-slate-100 relative">
-          <div className="absolute top-6 right-6 flex flex-col items-end gap-2">
+      <main className="max-w-5xl mx-auto px-6 pt-12">
+        <div className="mb-10 w-full h-3 bg-slate-200 rounded-full overflow-hidden shadow-inner">
+           <div className="h-full bg-blue-600 transition-all duration-700 ease-out shadow-[0_0_15px_rgba(37,99,235,0.5)]" style={{ width: `${progress}%` }}></div>
+        </div>
+
+        <div className="bg-white p-10 md:p-16 rounded-[4rem] shadow-2xl shadow-slate-200 border border-slate-100 relative">
+          <div className="absolute top-10 right-10">
              <button 
                 onClick={() => setIsNavOpen(!isNavOpen)}
-                className="text-xs font-bold text-slate-400 hover:text-blue-600 transition-colors uppercase flex items-center gap-1"
+                className="px-4 py-2 bg-slate-50 text-[10px] font-black text-slate-400 hover:text-blue-600 transition-all uppercase tracking-widest flex items-center gap-2 rounded-xl border border-slate-100"
              >
-               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7" /></svg>
-               Jump to Item
+               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 6h16M4 12h16m-7 6h7" /></svg>
+               Jump To
              </button>
-             <label className="flex items-center gap-2 cursor-pointer group">
-                <span className="text-[10px] font-bold text-slate-400 uppercase group-hover:text-blue-600 transition-colors">Skip Answered</span>
-                <input 
-                  type="checkbox" 
-                  checked={reviewUnansweredOnly}
-                  onChange={(e) => setReviewUnansweredOnly(e.target.checked)}
-                  className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 transition-all"
-                />
-             </label>
           </div>
 
           {isNavOpen && (
-            <div className="mb-8 p-6 bg-slate-50 rounded-2xl border border-slate-200 max-h-48 overflow-y-auto">
-              <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
+            <div className="mb-12 p-10 bg-slate-50 rounded-[3rem] border border-slate-200 max-h-72 overflow-y-auto animate-in slide-in-from-top-4 duration-500">
+              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Answer Navigator</h4>
+              <div className="grid grid-cols-6 sm:grid-cols-10 md:grid-cols-12 gap-3">
                 {questions.map((_, idx) => (
                   <button
                     key={idx}
                     onClick={() => { setCurrentIndex(idx); setIsNavOpen(false); }}
-                    className={`aspect-square text-[10px] font-bold rounded-lg flex items-center justify-center border transition-all ${
-                      currentIndex === idx ? 'bg-blue-600 text-white border-blue-600 scale-110 z-10 shadow-lg shadow-blue-200' : 
-                      userAnswers[questions[idx].id] !== undefined ? 'bg-green-100 text-green-700 border-green-200' :
-                      'bg-white text-slate-400 border-slate-200 hover:border-blue-300'
+                    className={`aspect-square text-[10px] font-black rounded-xl flex items-center justify-center border-2 transition-all ${
+                      currentIndex === idx ? 'bg-blue-600 text-white border-blue-600 scale-110 shadow-xl shadow-blue-200' : 
+                      userAnswers[questions[idx].id] !== undefined ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                      'bg-white text-slate-400 border-slate-100 hover:border-blue-200'
                     }`}
                   >
                     {idx + 1}
@@ -433,57 +408,50 @@ const App: React.FC = () => {
             showFeedback={showFeedback}
           />
 
-          <div className="mt-12 flex flex-col sm:flex-row items-center justify-between gap-4 pt-8 border-t border-slate-100">
-            <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+          <div className="mt-16 flex flex-col sm:flex-row items-center justify-between gap-6 pt-10 border-t border-slate-100">
+            <div className="flex items-center gap-4 w-full sm:w-auto">
               <button 
-                disabled={currentIndex === 0 && (!reviewUnansweredOnly || findNextAvailable('backward', currentIndex) === null)} 
+                disabled={currentIndex === 0} 
                 onClick={handlePrev} 
-                className="flex-1 sm:flex-none px-6 py-3 border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 disabled:opacity-30 transition-colors text-sm uppercase flex items-center justify-center gap-2"
+                className="flex-1 sm:flex-none px-10 py-5 bg-white border-2 border-slate-900 text-slate-900 font-black rounded-2xl hover:bg-slate-50 disabled:opacity-30 transition-all text-xs uppercase tracking-widest flex items-center justify-center gap-3"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
-                Back
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 19l-7-7 7-7" /></svg>
+                Prev
               </button>
               
               <button 
-                disabled={currentIndex === questions.length - 1 && (!reviewUnansweredOnly || findNextAvailable('forward', currentIndex) === null)}
-                onClick={handleNext}
-                className="flex-1 sm:flex-none px-6 py-3 bg-slate-100 text-slate-500 font-bold rounded-xl hover:bg-slate-200 transition-colors text-sm uppercase flex items-center justify-center gap-2"
-              >
-                Skip
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg>
-              </button>
-
-              <button 
                 onClick={() => setShowFeedback(!showFeedback)} 
-                className={`flex-1 sm:flex-none px-6 py-3 font-bold rounded-xl text-sm uppercase transition-all ${showFeedback ? 'bg-amber-100 text-amber-700' : 'bg-white text-slate-400 border border-slate-200'}`}
+                className={`flex-1 sm:flex-none px-10 py-5 font-black rounded-2xl text-xs uppercase tracking-widest transition-all ${showFeedback ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}
               >
-                {showFeedback ? 'Hide Hint' : 'Hint'}
+                {showFeedback ? 'Hide Clue' : 'Hint'}
               </button>
             </div>
 
             <button 
               disabled={userAnswers[currentQuestion.id] === undefined} 
               onClick={handleNext} 
-              className="w-full sm:w-auto px-12 py-3 bg-blue-600 text-white font-black rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-all shadow-lg uppercase text-sm tracking-widest flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-16 py-5 bg-blue-600 text-white font-black rounded-2xl hover:bg-blue-700 disabled:opacity-50 transition-all shadow-xl shadow-blue-100 uppercase text-xs tracking-[0.2em] flex items-center justify-center gap-4"
             >
-              {currentIndex === questions.length - 1 && !reviewUnansweredOnly ? 'Submit Set' : 'Next Item'}
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
+              {currentIndex === questions.length - 1 ? 'Finish Exam' : 'Next Item'}
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 5l7 7-7 7" /></svg>
             </button>
           </div>
         </div>
         
-        <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 text-center shadow-sm">
-             <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Answered</p>
-             <p className="text-xl font-black text-slate-800">{Object.keys(userAnswers).length}</p>
+        <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="bg-white p-6 rounded-[2rem] border border-slate-100 text-center shadow-lg shadow-slate-200/50">
+             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Completion</p>
+             <p className="text-2xl font-black text-slate-900">{Math.round((Object.keys(userAnswers).length / questions.length) * 100)}%</p>
           </div>
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 text-center shadow-sm">
-             <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Remaining</p>
-             <p className="text-xl font-black text-blue-600">{unansweredCount}</p>
+          <div className="bg-white p-6 rounded-[2rem] border border-slate-100 text-center shadow-lg shadow-slate-200/50">
+             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Remaining</p>
+             <p className="text-2xl font-black text-blue-600">{questions.length - Object.keys(userAnswers).length}</p>
           </div>
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 text-center col-span-2 shadow-sm">
-             <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Goal Score</p>
-             <p className="text-xl font-black text-green-600">80.00%</p>
+          <div className="bg-white p-6 rounded-[2rem] border border-slate-100 text-center md:col-span-2 shadow-lg shadow-slate-200/50 flex flex-col items-center justify-center">
+             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Session Efficiency</p>
+             <div className="w-full h-2 bg-slate-100 rounded-full mt-1 overflow-hidden max-w-[200px]">
+                <div className="h-full bg-emerald-500" style={{ width: '85%' }}></div>
+             </div>
           </div>
         </div>
       </main>
